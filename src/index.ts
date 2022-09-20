@@ -9,14 +9,17 @@ import type {
 import SentryCli from '@sentry/cli';
 
 interface ViteSentryPluginOptions extends SentryCliOptions /*, SentryCliReleases*/ {
+	disabled?: boolean;
 	/**
 	Unique name for the release
 	Defaults to sentry-cli releases propose-version (requires access to GIT and root directory to be repo)
 	**/
 	release?: string;
-	sourceMaps: SentryCliUploadSourceMapsOptions;
+	/** Options for sourcemap uploads. If this is omitted then the entire upload is skipped. */
+	sourceMaps?: SentryCliUploadSourceMapsOptions;
 	setCommits?: SentryCliCommitsOptions;
 	deploy?: SentryCliNewDeployOptions;
+	/** Finalise the release. Defaults to false. */
 	finalise?: boolean;
 }
 
@@ -77,47 +80,46 @@ export default async function sentryUploadPlugin(
 
 		/* Sentry stuff */
 		async closeBundle() {
-			if (config.isProduction && config.build.ssr) {
-				if (!currentRelease) {
-					this.warn('No release found, skipping Sentry upload.');
-				} else {
-					try {
-						console.log(`Creating release: ${currentRelease} (for ${options.project})`);
-						console.log(`Environment: ${options.deploy?.env}`);
-						// Create new Sentry release
-						await cli.releases.new(currentRelease);
+			if (options.disabled) {
+				console.log('Sentry upload is disabled. Skipping...');
+			} else if (!options.sourceMaps) {
+				this.warn('Missing sourceMaps option, skipping Sentry upload.');
+			} else if (!currentRelease) {
+				this.warn('No release found, skipping Sentry upload.');
+			} else if (config.isProduction && config.build.ssr) {
+				try {
+					console.log(`Creating release: ${currentRelease} (for ${options.project})`);
+					console.log(`Environment: ${options.deploy?.env}`);
+					// Create new Sentry release
+					await cli.releases.new(currentRelease);
 
-						// Upload sourcemaps to Sentry
-						console.log('Uploading sourcemaps to Sentry...');
-						await cli.releases.uploadSourceMaps(currentRelease, options.sourceMaps);
+					// Upload sourcemaps to Sentry
+					console.log('Uploading sourcemaps to Sentry...');
+					await cli.releases.uploadSourceMaps(currentRelease, options.sourceMaps);
 
-						if (options.setCommits) {
-							console.log('Setting commits...');
-							if (
-								options.setCommits.auto ||
-								(options.setCommits.repo && options.setCommits.commit)
-							) {
-								await cli.releases.setCommits(currentRelease, options.setCommits);
-							}
+					if (options.setCommits) {
+						console.log('Setting commits...');
+						if (options.setCommits.auto || (options.setCommits.repo && options.setCommits.commit)) {
+							await cli.releases.setCommits(currentRelease, options.setCommits);
 						}
-
-						// Finalise the release
-						if (options.finalise) {
-							console.log('Finalising release...');
-							await cli.releases.finalize(currentRelease);
-						}
-
-						// Set deploy options
-						if (options.deploy && options.deploy.env) {
-							console.log('Setting deploy options...');
-							await cli.releases.newDeploy(currentRelease, options.deploy);
-						}
-
-						console.log('Sentry upload complete!');
-					} catch (error) {
-						const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-						this.warn(`Sentry upload failed: ${errorMessage}`);
 					}
+
+					// Finalise the release
+					if (options.finalise) {
+						console.log('Finalising release...');
+						await cli.releases.finalize(currentRelease);
+					}
+
+					// Set deploy options
+					if (options.deploy && options.deploy.env) {
+						console.log('Setting deploy options...');
+						await cli.releases.newDeploy(currentRelease, options.deploy);
+					}
+
+					console.log('Sentry upload complete!');
+				} catch (error) {
+					const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+					this.warn(`Sentry upload failed: ${errorMessage}`);
 				}
 			}
 		}
