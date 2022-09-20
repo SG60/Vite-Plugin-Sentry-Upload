@@ -8,7 +8,7 @@
 		"url": "https://github.com/SG60/Vite-Plugin-Sentry-Upload"
 	},
 	"license": "MIT",
-	"version": "0.0.2",
+	"version": "0.0.3",
 	"packageManager": "pnpm@7.12.0",
 	"keywords": [
 		"vite-plugin",
