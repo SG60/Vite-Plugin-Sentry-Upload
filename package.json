@@ -24,6 +24,7 @@
 		"dist",
 		"client.d.ts"
 	],
+	"types": "dist/index.d.ts",
 	"module": "dist/index.mjs",
 	"main": "dist/index.cjs",
 	"devDependencies": {
