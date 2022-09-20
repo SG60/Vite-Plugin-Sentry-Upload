@@ -1,5 +1,5 @@
 {
-	"name": "@samgreening/vite-plugin-sentry-upload",
+	"name": "vite-plugin-sentry-upload",
 	"author": {
 		"name": "Sam Greening"
 	},
