@@ -11,7 +11,11 @@
 		"noEmit": true,
 		"noUnusedLocals": true,
 		"noUnusedParameters": true,
-		"noImplicitReturns": true
+		"noImplicitReturns": true,
+		"outDir": "dist",
+		"declaration": true,
+		"declarationDir": "."
 	},
-	"include": ["src"]
+	"include": ["."],
+	"exclude": ["node_modules", "dist"]
 }
